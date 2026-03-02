@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { toast , Toaster} from 'react-hot-toast'
 
 export default function CreateItems() {
 
   const [Images, setyImages] = useState([])
+  const [Files, setFiles] = useState([])
   const [isDiscounted, setisDiscounted] = useState(false);
   const [Quant, setQuant] = useState("")
   const [Category, setCatgory] = useState("")
@@ -12,43 +14,52 @@ export default function CreateItems() {
   const [Name, setName] = useState("")
   const [DiscounPer, setDiscounPer] = useState("")
   const [isTrue, setisTrue] = useState(false)
+  const [Categories, setCategories] = useState([])
 
- 
+  useEffect(() => {
+
+    const getdata = async () => {
+      const response = await fetch("http://localhost:5000/api/category")
+      const data = await response.json()
+      setCategories(data.data)
+    }
+
+    if (Categories.length === 0) {
+      getdata();
+
+    }
+
+  }, [Categories])
+
+
   const UploadItem = async () => {
 
-    const data_to_send = {
+    const formData = new FormData();
+    formData.append('name', Name);
+    formData.append('desc', Desc);
+    formData.append('price', Price);
+    formData.append('quantity', Quant);
+    formData.append('category', Category);
+    formData.append('status', Status);
+    formData.append('discount', DiscounPer);
 
-      name: Name , 
-      desc: Desc,
-      price: Price,
-      quantity: Quant,
-      category: Category,
-      status: Status,
-      discount: DiscounPer
+    Files.forEach((file) => {
+      formData.append('images', file);
+    });
 
-      
-    }
+    const response = await fetch("http://localhost:5000/api/uploaditem", {
+      method: "POST",
+      body: formData
+    });
 
-    const response  = await fetch("http://localhost:5000/api/uploaditem" , {
-      method: "POST", 
-      headers: {
-        "Content-Type" : "application/json"
-      },
-      body: JSON.stringify(data_to_send)
-    })
-    
-
-    if (!response.ok) {
-      throw new Error("Failed to upload item");
-    }
 
     const result = await response.json();
     if (result.success) {
       window.location.reload();
-      alert("Item uploaded successfully!");
       
+
     } else {
-      alert("Failed to upload item.");
+      ErrorToast(result.error)
     }
   }
 
@@ -61,14 +72,27 @@ export default function CreateItems() {
     const readfile = new FileReader();
 
     readfile.onload = (event) => {
-
       const result = event.target.result;
-
-
       setyImages(prev => [...prev, result]);
+      setFiles(prev => [...prev, file]);
     };
 
     readfile.readAsDataURL(file);
+  };
+
+
+  const SuccessToast = (message) => {
+    toast.success(message, {
+      duration: 1500,
+      position: "top-right",
+    });
+  };
+
+  const ErrorToast = (message) => {
+    toast.error(message, {
+      duration: 1500,
+      position: "top-right",
+    });
   };
 
   // validation effect
@@ -89,6 +113,7 @@ export default function CreateItems() {
 
   return (
     <div className='w-full h-[100vh] flex items-center justify-center'>
+      <Toaster/>
       <div className='w-[1200px] flex p-[10px] h-[100%] overflow-y-auto bg-zinc-800 rounded-lg shadow-lg '>
 
         <div className='w-[40%] items-center justify-center h-full flex border-r-2 border-black flex-col h-[100%]'>
@@ -102,7 +127,7 @@ export default function CreateItems() {
           </div>
 
           <div className='relative h-[10%] bg-black rounded-lg w-[90%] flex items-center justify-center p-[10px]'>
-            <input  onChange={(e) => HandleImageUpload(e)} type="file" className='w-[100%] cursor-pointer opacity-0 absolute' />
+            <input onChange={(e) => HandleImageUpload(e)} type="file" className='w-[100%] cursor-pointer opacity-0 absolute' />
             <p className='text-white'>Upload Image</p>
           </div>
         </div>
@@ -141,18 +166,20 @@ export default function CreateItems() {
               <label htmlFor="categories" className='text-orange-500' >Categories</label>
 
               <select value={Category} onChange={(e) => setCatgory(e.target.value)} name="category" id="category" className='w-full outline-none rounded-lg border-2 border-gray-400  focus:border-orange-500 p-[10px]'>
-                <option value="">None</option>
-                <option value="dwad">dwa</option>
+                <option className='text-white bg-zinc-800' value="">None</option>
+                {Categories.map((value, index) => (
+                  <option className='text-white bg-zinc-800' key={index} value={value.id}>{value.name}</option>
+                ))}
               </select>
             </div>
 
             <div className='w-[50%]'>
               <label htmlFor="status" className='text-orange-500'>Status</label>
               <select value={Status} onChange={(e) => setStatus(e.target.value)} name="status" className='w-full outline-none rounded-lg border-2 border-gray-400 p-[10px] focus:border-orange-500' id="status">
-                <option value="">None</option>
-                <option value="active">Active</option>
-                <option value="active">Disable</option>
-                <option value="active">Out of stock</option>
+                <option className='text-white bg-zinc-800' value="">None</option>
+                <option className='text-white bg-zinc-800' value="active">Active</option>
+                <option className='text-white bg-zinc-800' value="active">Disable</option>
+                <option className='text-white bg-zinc-800' value="active">Out of stock</option>
               </select>
             </div>
           </div>
@@ -175,11 +202,10 @@ export default function CreateItems() {
           <button
             onClick={() => UploadItem()}
             disabled={!isTrue}
-            className={`w-full rounded-full text-black border-2 border-black p-[10px] shadow-lg ${
-              isTrue
-                ? 'bg-green-500 cursor-pointer'
-                : 'bg-green-200 cursor-not-allowed'
-            }`}
+            className={`w-full rounded-full text-black border-2 border-black p-[10px] shadow-lg ${isTrue
+              ? 'bg-green-500 cursor-pointer'
+              : 'bg-green-200 cursor-not-allowed'
+              }`}
           >
             Add item
           </button>

@@ -1,29 +1,36 @@
-'use client';
+import { toast , Toaster} from 'react-hot-toast'
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Plus,
   Trash2,
   Edit2,
   Search,
   X,
-  ChevronDown,
   Package,
   FolderPlus,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
+import { Link, useNavigate } from 'react-router-dom';
 export default function InventoryPage() {
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Beverages' },
-    { id: 2, name: 'Snacks' },
-  ]);
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
 
-  const [items, setItems] = useState([
-    { id: 1, categoryId: 1, name: 'Coffee', sku: 'BEV001', img: "https://static.vecteezy.com/system/resources/thumbnails/023/742/327/small/latte-coffee-isolated-illustration-ai-generative-free-png.png" ,  quantity: 50, price: 2.5 },
-    { id: 2, categoryId: 1, name: 'Tea', sku: 'BEV002', img: "https://static.vecteezy.com/system/resources/thumbnails/023/742/327/small/latte-coffee-isolated-illustration-ai-generative-free-png.png" ,  quantity: 30, price: 1.5 },
-    { id: 3, categoryId: 2, name: 'Chips', sku: 'SNK001', img: "https://static.vecteezy.com/system/resources/thumbnails/023/742/327/small/latte-coffee-isolated-illustration-ai-generative-free-png.png" ,  quantity: 100, price: 1.2 },
-  ]);
+  const [items, setItems] = useState([]);
+
+
+  useEffect(() => {
+
+    const getdata = async () => {
+      const response = await fetch("http://localhost:5000/api/category")
+      const data = await response.json()
+      setCategories(data.data)
+    }
+
+    if (categories.length === 0) {
+      getdata();
+    }
+  }, [categories])
 
   const [selectedCategory, setSelectedCategory] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,6 +39,22 @@ export default function InventoryPage() {
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingItem, setEditingItem] = useState(null);
+
+  const SuccessToast = (message) => {
+    toast.success(message, {
+      duration: 1500,
+      position: "top-right",
+    });
+  };
+
+  const ErrorToast = (message) => {
+    toast.error(message, {
+      duration: 1500,
+      position: "top-right",
+    });
+  };
+
+
 
   const [formData, setFormData] = useState({
     name: '',
@@ -42,6 +65,37 @@ export default function InventoryPage() {
 
   // Add new category
   const handleAddCategory = () => {
+
+    const handleAddNewCategory = async () => {
+      const response = await fetch("http://localhost:5000/api/category", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name: newCategoryName })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error("An error occured!")
+        return;
+      }
+
+      if (data.success) {
+        SuccessToast("New category creaated!");
+        setNewCategoryName('');
+        setShowAddCategoryModal(false);
+      }
+      else{
+        ErrorToast("Failed to add new category!");
+      }
+
+
+    }
+
+
+
     if (newCategoryName.trim()) {
       setCategories([
         ...categories,
@@ -50,8 +104,8 @@ export default function InventoryPage() {
           name: newCategoryName,
         },
       ]);
-      setNewCategoryName('');
-      setShowAddCategoryModal(false);
+      handleAddNewCategory();
+
     }
   };
 
@@ -81,12 +135,12 @@ export default function InventoryPage() {
         items.map((item) =>
           item.id === editingItem.id
             ? {
-                ...item,
-                name: formData.name,
-                sku: formData.sku,
-                quantity: parseInt(formData.quantity),
-                price: parseFloat(formData.price),
-              }
+              ...item,
+              name: formData.name,
+              sku: formData.sku,
+              quantity: parseInt(formData.quantity),
+              price: parseFloat(formData.price),
+            }
             : item
         )
       );
@@ -138,6 +192,7 @@ export default function InventoryPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
+      <Toaster />
       <div className="bg-zinc-900 border-b border-zinc-800 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
@@ -153,16 +208,13 @@ export default function InventoryPage() {
                 <FolderPlus className="w-5 h-5" />
                 Add Category
               </button>
-              <button
-                onClick={() => {
-                  setFormData({ name: '', sku: '', quantity: '', price: '' });
-                  setShowAddItemModal(true);
-                }}
+              <Link to={"/createitem"}
+                
                 className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg font-semibold transition duration-200"
               >
                 <Plus className="w-5 h-5" />
                 Add Item
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -183,11 +235,10 @@ export default function InventoryPage() {
                     >
                       <button
                         onClick={() => setSelectedCategory(category.id)}
-                        className={`flex-1 text-left px-3 py-2 rounded-lg transition duration-200 ${
-                          selectedCategory === category.id
-                            ? 'bg-orange-600 text-white font-semibold'
-                            : 'hover:bg-zinc-800 text-gray-300'
-                        }`}
+                        className={`flex-1 text-left px-3 py-2 rounded-lg transition duration-200 ${selectedCategory === category.id
+                          ? 'bg-orange-600 text-white font-semibold'
+                          : 'hover:bg-zinc-800 text-gray-300'
+                          }`}
                       >
                         {category.name}
                       </button>
@@ -250,13 +301,12 @@ export default function InventoryPage() {
                           <td className="px-4 py-3 text-gray-400">{item.sku}</td>
                           <td className="px-4 py-3">
                             <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                item.quantity > 20
-                                  ? ' text-green-400'
-                                  : item.quantity > 10
+                              className={`px-3 py-1 rounded-full text-sm font-medium ${item.quantity > 20
+                                ? ' text-green-400'
+                                : item.quantity > 10
                                   ? 'text-yellow-400'
                                   : ' text-red-400'
-                              }`}
+                                }`}
                             >
                               {item.quantity}
                             </span>
