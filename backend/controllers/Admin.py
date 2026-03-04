@@ -225,14 +225,14 @@ def AddItem(data, files=None):
                 tmp_path = os.path.join(tempfile.gettempdir(), newname)
                 f.save(tmp_path)
                 # upload to s3
-                success = upload_file(tmp_path, f"items/{newname}")
+                success = upload_file(tmp_path, f"items/{newname}" , f.content_type )
                 try:
                     os.remove(tmp_path)
                 except Exception:
                     pass
                 if not success:
                     return {"success": False, "error": "Failed to upload file", "code": 500}
-                # construct url
+                
                 if bucket:
                     urls.append(f"/items/{newname}")
                 else:

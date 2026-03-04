@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { toast , Toaster} from 'react-hot-toast'
+import { toast, Toaster } from 'react-hot-toast'
+import Loading from '../components/Loading'
+
 
 export default function CreateItems() {
 
@@ -15,6 +17,22 @@ export default function CreateItems() {
   const [DiscounPer, setDiscounPer] = useState("")
   const [isTrue, setisTrue] = useState(false)
   const [Categories, setCategories] = useState([])
+  const [isLoading, setisLoading] = useState(true)
+
+
+  const SuccessToast = (message) => {
+    toast.success(message, {
+      duration: 1500,
+      position: "top-right",
+    });
+  };
+
+  const ErrorToast = (message) => {
+    toast.error(message, {
+      duration: 1500,
+      position: "top-right",
+    });
+  };
 
   useEffect(() => {
 
@@ -33,7 +51,7 @@ export default function CreateItems() {
 
 
   const UploadItem = async () => {
-
+    setisLoading(true);
     const formData = new FormData();
     formData.append('name', Name);
     formData.append('desc', Desc);
@@ -56,11 +74,14 @@ export default function CreateItems() {
     const result = await response.json();
     if (result.success) {
       window.location.reload();
-      
+      setisLoading(false);
 
     } else {
       ErrorToast(result.error)
+      setisLoading(false);
     }
+
+
   }
 
 
@@ -81,19 +102,7 @@ export default function CreateItems() {
   };
 
 
-  const SuccessToast = (message) => {
-    toast.success(message, {
-      duration: 1500,
-      position: "top-right",
-    });
-  };
 
-  const ErrorToast = (message) => {
-    toast.error(message, {
-      duration: 1500,
-      position: "top-right",
-    });
-  };
 
   // validation effect
   useEffect(() => {
@@ -113,9 +122,20 @@ export default function CreateItems() {
 
   return (
     <div className='w-full h-[100vh] flex items-center justify-center'>
-      <Toaster/>
-      <div className='w-[1200px] flex p-[10px] h-[100%] overflow-y-auto bg-zinc-800 rounded-lg shadow-lg '>
+      <Toaster />
+      <div className='relative w-[1200px] scroller flex p-[10px] h-[100%] overflow-y-auto bg-zinc-800 items-center justify-center rounded-lg shadow-lg '>
+        {
 
+          isLoading ?   <div className=' absolute flex w-[90%] h-[80%]'> 
+              <div className='absolute bg-black opacity-[0.7]'>
+
+              </div>
+              <div className='w-full h-full flex items-center justify-center '>
+                <Loading/>
+              </div>
+            </div> : <></>
+
+        }
         <div className='w-[40%] items-center justify-center h-full flex border-r-2 border-black flex-col h-[100%]'>
           <div className='h-[90%] flex flex-col gap-[10px]' >
 

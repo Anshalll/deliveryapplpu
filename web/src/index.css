@@ -3,3 +3,7 @@
 :root{
     background: #000;
 }
+
+.scroller::-webkit-scrollbar{
+    display: none;
+}
