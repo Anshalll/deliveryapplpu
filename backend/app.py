@@ -67,6 +67,22 @@ def getAllCategories():
         return jsonify(success=False, error="Internal server error!"), 500
 
 
+@app.route("/api/getitems" , methods=["POST"])
+def getitemsbycategory():
+    try: 
+        
+        data = request.get_json()
+        resp  = Admin.getItemWithCategory(data)
+        if resp["success"]: 
+            return jsonify(success=True, message=resp["message"] , data=resp["data"] ) , resp["code"]
+        else:
+            return jsonify(success=False, error=resp["error"]), resp["code"]
+        
+
+    except Exception as e: 
+        print(e)
+        return jsonify(error="Inernal server error!" , success=False) , 500
+
 @app.route("/api/category/<int:category_id>", methods=["GET"])
 def getCategory(category_id):
     """Get a specific category"""

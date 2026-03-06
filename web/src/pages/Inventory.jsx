@@ -1,4 +1,4 @@
-import { toast , Toaster} from 'react-hot-toast'
+import { toast, Toaster } from 'react-hot-toast'
 
 import { useEffect, useState } from 'react';
 import {
@@ -17,6 +17,8 @@ export default function InventoryPage() {
   const navigate = useNavigate();
 
   const [items, setItems] = useState([]);
+
+
 
 
   useEffect(() => {
@@ -40,6 +42,9 @@ export default function InventoryPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingItem, setEditingItem] = useState(null);
 
+
+
+
   const SuccessToast = (message) => {
     toast.success(message, {
       duration: 1500,
@@ -54,6 +59,31 @@ export default function InventoryPage() {
     });
   };
 
+
+    useEffect(() => {
+    const getitemsdata = async () => {
+      const response  = await fetch("http://localhost:5000/api/getitems" , {
+        method: "POST",
+        headers: {
+          "Content-Type" : "application/json"
+        },
+        body: JSON.stringify({catid: selectedCategory  })
+      })
+
+      if (!response.ok) {
+          ErrorToast("Error fetching data!"); 
+      }
+
+      const data = response.json()
+      console.log(data)
+
+    }
+
+    if (items.length === 0) {
+          getitemsdata();
+    }
+
+  }, [selectedCategory])
 
 
   const [formData, setFormData] = useState({
@@ -87,7 +117,7 @@ export default function InventoryPage() {
         setNewCategoryName('');
         setShowAddCategoryModal(false);
       }
-      else{
+      else {
         ErrorToast("Failed to add new category!");
       }
 
@@ -209,7 +239,7 @@ export default function InventoryPage() {
                 Add Category
               </button>
               <Link to={"/createitem"}
-                
+
                 className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg font-semibold transition duration-200"
               >
                 <Plus className="w-5 h-5" />

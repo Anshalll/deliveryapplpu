@@ -17,7 +17,7 @@ export default function CreateItems() {
   const [DiscounPer, setDiscounPer] = useState("")
   const [isTrue, setisTrue] = useState(false)
   const [Categories, setCategories] = useState([])
-  const [isLoading, setisLoading] = useState(true)
+  const [isLoading, setisLoading] = useState(false)
 
 
   const SuccessToast = (message) => {
@@ -127,10 +127,10 @@ export default function CreateItems() {
         {
 
           isLoading ?   <div className=' absolute flex w-[90%] h-[80%]'> 
-              <div className='absolute bg-black opacity-[0.7]'>
+              <div className='absolute rounded-lg bg-black w-full h-full opacity-[0.7]'>
 
               </div>
-              <div className='w-full h-full flex items-center justify-center '>
+              <div className='w-full z-1 h-full flex items-center justify-center '>
                 <Loading/>
               </div>
             </div> : <></>

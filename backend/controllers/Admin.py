@@ -178,6 +178,34 @@ def GetItemsWithCategories():
         print("DB error:", e)
         return {"success": False, "error": "An error occurred!", "code": 500}
 
+
+def getItemWithCategory(data): 
+    try: 
+        cat_id = data.get("catid" , None)
+
+        if not cat_id: 
+            return {"success" : False, "error" : "Category id is required!" , "code" : 400}
+        
+        get_items = Items.query.filter_by(category = cat_id).all()
+        items_data = []
+        for i in get_items: 
+            print(i)
+            items_data.append(i.to_dict(include_items=True  09))
+
+        return {
+            "success": True,
+            "data": items_data,
+            "message" : "Data fetched successfully!",
+            "code": 200
+        }
+
+
+    except Exception as e: 
+        print(e)
+        return {"success" : False, "error" : "Internal server error!" , "code" : 500}
+
+
+
 def AddItem(data, files=None):
     try:
         name = data.get("name")

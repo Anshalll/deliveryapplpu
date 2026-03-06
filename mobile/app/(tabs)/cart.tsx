@@ -1,6 +1,6 @@
 import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import React, { useState } from 'react'
-
+import { Link } from 'expo-router'
 export default function cart() {
 
   const [cartItems, setCartItems] = useState([
@@ -85,9 +85,9 @@ export default function cart() {
           <Text className='text-lg font-semibold'>${total.toFixed(2)}</Text>
         </View>
 
-        <TouchableOpacity onPress={handleCheckout} className='bg-green-600 py-3 rounded items-center'>
+        <Link href={"/(tabs)/checkout"}  className='bg-green-600 py-3 rounded items-center'>
           <Text className='text-white font-semibold'>Checkout</Text>
-        </TouchableOpacity>
+        </Link>
       </View>
     </ScrollView>
   )

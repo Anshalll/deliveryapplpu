@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { House, CircleUserRound, ShoppingCart, Heart , Baby } from 'lucide-react-native';
+import { House, CircleUserRound, ShoppingCart, Heart, Baby } from 'lucide-react-native';
 import Header from '@/components/Header';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View } from 'react-native';
@@ -12,19 +12,19 @@ import { useEffect } from 'react';
 export default function TabsLayout() {
 
   const { theme } = useTheme();
-  const {  setMenuOpen } = useMenu();
+  const { setMenuOpen } = useMenu();
   const pathname = usePathname();
-  
+
   useEffect(() => {
     setMenuOpen(false);
-  } , [pathname])
+  }, [pathname])
   return (
     <View className='relative' style={{ flex: 1, backgroundColor: theme.background }}>
 
-        <Menu />
+      <Menu />
 
       <SafeAreaView edges={['top']} style={{ backgroundColor: theme.background }}>
-        <Header  />
+        <Header />
       </SafeAreaView>
 
 
@@ -69,21 +69,31 @@ export default function TabsLayout() {
           <Tabs.Screen
             name="cats"
             options={{
-                href: null
+              href: null
             }}
           />
 
           <Tabs.Screen
             name="search"
             options={{
-                href: null
+              href: null
             }}
           />
 
 
+          <Tabs.Screen
+            name="item/[item]"
+            options={{
+              href: null
+            }}
+          />
 
-          
-
+          <Tabs.Screen
+            name="checkout"
+            options={{
+              href: null
+            }}
+          />
 
 
         </Tabs>
