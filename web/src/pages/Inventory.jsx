@@ -13,11 +13,11 @@ import {
 
 import { Link, useNavigate } from 'react-router-dom';
 export default function InventoryPage() {
+
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
 
   const [items, setItems] = useState([]);
-
 
 
 
@@ -37,10 +37,8 @@ export default function InventoryPage() {
   const [selectedCategory, setSelectedCategory] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
-  const [showAddItemModal, setShowAddItemModal] = useState(false);
-  const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [editingItem, setEditingItem] = useState(null);
+
 
 
 
@@ -60,27 +58,30 @@ export default function InventoryPage() {
   };
 
 
-    useEffect(() => {
+  useEffect(() => {
     const getitemsdata = async () => {
-      const response  = await fetch("http://localhost:5000/api/getitems" , {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/getitems`, {
         method: "POST",
         headers: {
-          "Content-Type" : "application/json"
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({catid: selectedCategory  })
+        body: JSON.stringify({ catid: selectedCategory })
       })
 
       if (!response.ok) {
-          ErrorToast("Error fetching data!"); 
+        ErrorToast("Error fetching data!");
       }
 
-      const data = response.json()
-      console.log(data)
+      const data = await response.json()
+      if (data.success) {
+
+        setItems(data.data)
+      }
 
     }
 
     if (items.length === 0) {
-          getitemsdata();
+      getitemsdata();
     }
 
   }, [selectedCategory])
@@ -88,7 +89,7 @@ export default function InventoryPage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    sku: '',
+
     quantity: '',
     price: '',
   });
@@ -116,6 +117,10 @@ export default function InventoryPage() {
         SuccessToast("New category creaated!");
         setNewCategoryName('');
         setShowAddCategoryModal(false);
+
+
+
+
       }
       else {
         ErrorToast("Failed to add new category!");
@@ -141,44 +146,24 @@ export default function InventoryPage() {
 
   // Add new item
   const handleAddItem = () => {
-    if (formData.name && formData.sku && formData.quantity && formData.price) {
+    if (formData.name && formData.quantity && formData.price) {
       setItems([
         ...items,
         {
           id: Math.max(...items.map((i) => i.id), 0) + 1,
           categoryId: selectedCategory,
           name: formData.name,
-          sku: formData.sku,
+
           quantity: parseInt(formData.quantity),
           price: parseFloat(formData.price),
         },
       ]);
-      setFormData({ name: '', sku: '', quantity: '', price: '' });
+      setFormData({ name: '', quantity: '', price: '' });
       setShowAddItemModal(false);
     }
   };
 
-  // Update item
-  const handleUpdateItem = () => {
-    if (formData.name && formData.sku && formData.quantity && formData.price) {
-      setItems(
-        items.map((item) =>
-          item.id === editingItem.id
-            ? {
-              ...item,
-              name: formData.name,
-              sku: formData.sku,
-              quantity: parseInt(formData.quantity),
-              price: parseFloat(formData.price),
-            }
-            : item
-        )
-      );
-      setFormData({ name: '', sku: '', quantity: '', price: '' });
-      setEditingItem(null);
-      setShowEditItemModal(false);
-    }
-  };
+
 
   // Delete item
   const handleDeleteItem = (id) => {
@@ -194,30 +179,48 @@ export default function InventoryPage() {
     }
   };
 
-  // Edit item
-  const handleEditItem = (item) => {
-    setEditingItem(item);
-    setFormData({
-      name: item.name,
-      sku: item.sku,
-      quantity: item.quantity.toString(),
-      price: item.price.toString(),
-    });
-    setShowEditItemModal(true);
-  };
 
-  // Filter items by category and search
+
+
   const filteredItems = items.filter(
     (item) =>
-      item.categoryId === selectedCategory &&
-      (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.sku.toLowerCase().includes(searchQuery.toLowerCase()))
+      item.category === selectedCategory &&
+      (item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
   );
 
   // Filter categories by search
   const filteredCategories = categories.filter((cat) =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+
+  const HandleSelectedCategory = async (id) => {
+
+
+    setSelectedCategory(id)
+    const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/getitems`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ catid: selectedCategory })
+    })
+
+    if (!response.ok) {
+      ErrorToast("Error fetching data!");
+    }
+
+    const data = await response.json()
+    if (data.success) {
+
+      setItems(data.data)
+    }
+
+
+  }
+
+
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -264,7 +267,7 @@ export default function InventoryPage() {
                       className="flex items-center justify-between"
                     >
                       <button
-                        onClick={() => setSelectedCategory(category.id)}
+                        onClick={() => HandleSelectedCategory(category.id)}
                         className={`flex-1 text-left px-3 py-2 rounded-lg transition duration-200 ${selectedCategory === category.id
                           ? 'bg-orange-600 text-white font-semibold'
                           : 'hover:bg-zinc-800 text-gray-300'
@@ -296,7 +299,7 @@ export default function InventoryPage() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
                   <input
                     type="text"
-                    placeholder="Search items by name or SKU..."
+                    placeholder="Search items by name..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-20 transition duration-200"
@@ -312,23 +315,24 @@ export default function InventoryPage() {
                       <tr className="border-b border-zinc-700">
                         <th className="text-left px-4 py-3 text-gray-400 font-semibold">Image</th>
                         <th className="text-left px-4 py-3 text-gray-400 font-semibold">Item Name</th>
-                        <th className="text-left px-4 py-3 text-gray-400 font-semibold">SKU</th>
                         <th className="text-left px-4 py-3 text-gray-400 font-semibold">Quantity</th>
                         <th className="text-left px-4 py-3 text-gray-400 font-semibold">Price</th>
                         <th className="text-left px-4 py-3 text-gray-400 font-semibold">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredItems.map((item) => (
+                      {filteredItems.map((item , key) => (
+                      
                         <tr
-                          key={item.id}
+                          key={key}
                           className="border-b border-zinc-800 hover:bg-zinc-800 transition duration-200"
                         >
                           <td className="px-4 py-3">
-                            <img src={item.img} alt={item.name} className="w-10 h-10 object-cover rounded" />
+
+                            <img src={`${import.meta.env.VITE_APP_CLOUD_FRONT_URL}${item.images[0]}`} alt={item.name} className="w-10 h-10 object-cover rounded" />
                           </td>
                           <td className="px-4 py-3">{item.name}</td>
-                          <td className="px-4 py-3 text-gray-400">{item.sku}</td>
+
                           <td className="px-4 py-3">
                             <span
                               className={`px-3 py-1 rounded-full text-sm font-medium ${item.quantity > 20
@@ -341,17 +345,17 @@ export default function InventoryPage() {
                               {item.quantity}
                             </span>
                           </td>
-                          <td className="px-4 py-3 font-semibold">₹{item.price.toFixed(2)}</td>
+                          <td className="px-4 py-3 font-semibold">₹{Number(item?.price)}</td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
                               <button
-                                onClick={() => navigate(`/updateitem/${item.id}`)}
+                                onClick={() => navigate(`/updateitem/${item.uniqueid}`)}
                                 className="p-2 text-blue-500 hover:bg-blue-500 hover:bg-opacity-20 rounded transition duration-200"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleDeleteItem(item.id)}
+                                onClick={() => handleDeleteItem(item.uniqueid)}
                                 className="p-2 text-red-500 hover:bg-red-500 hover:bg-opacity-20 rounded transition duration-200"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -414,133 +418,9 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Add Item Modal */}
-      {showAddItemModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Add New Item</h2>
-              <button
-                onClick={() => setShowAddItemModal(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
 
-            <div className="space-y-3 mb-4">
-              <input
-                type="text"
-                placeholder="Item name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-20 transition duration-200"
-              />
-              <input
-                type="text"
-                placeholder="SKU"
-                value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-20 transition duration-200"
-              />
-              <input
-                type="number"
-                placeholder="Quantity"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-20 transition duration-200"
-              />
-              <input
-                type="number"
-                placeholder="Price"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-20 transition duration-200"
-              />
-            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowAddItemModal(false)}
-                className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg font-semibold transition duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddItem}
-                className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold transition duration-200"
-              >
-                Add Item
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Edit Item Modal */}
-      {showEditItemModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Edit Item</h2>
-              <button
-                onClick={() => setShowEditItemModal(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-3 mb-4">
-              <input
-                type="text"
-                placeholder="Item name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-20 transition duration-200"
-              />
-              <input
-                type="text"
-                placeholder="SKU"
-                value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-20 transition duration-200"
-              />
-              <input
-                type="number"
-                placeholder="Quantity"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-20 transition duration-200"
-              />
-              <input
-                type="number"
-                placeholder="Price"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-20 transition duration-200"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowEditItemModal(false)}
-                className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg font-semibold transition duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => navigate(`/updateitem/${editingItem.id}`)}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition duration-200"
-              >
-                Update Item
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

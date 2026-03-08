@@ -31,6 +31,7 @@ class Items(db.Model):
 
     def to_dict(self , include_items=False , include_category=False): 
         data = {
+                
                 "name" : self.name,
                 "desc": self.desc,
                 "price": self.price,
@@ -43,7 +44,7 @@ class Items(db.Model):
             }
         if include_items: 
             
-
+            
             return data
         
         if include_category:
