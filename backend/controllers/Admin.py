@@ -147,6 +147,35 @@ def GetCategory(category_id):
 
 # ===================== ITEM FUNCTIONS =====================
 
+def updateItem(data): 
+    try: 
+        name = data.get("name" , None)
+        desc = data.get("desc" , None)
+        quantity = data.get("quantity" , None)
+        uniqueid = data.get("uniqueid" , None)
+        price = data.get("price" , None)
+        status = data.get("status" , None)
+        category = data.get("category" , None)
+
+        if not name or not desc or not price or not quantity or not category or not status or not uniqueid:
+            return {"success": False, "error": "Missing required fields", "code": 400}
+
+        if name.strip() == "" or desc.strip() == "" or status.strip() == "" or uniqueid.strip() == "":
+            return {"success": False, "error": "Fields cannot be empty", "code": 400}
+
+        
+
+        return {
+            "success" : True,
+            "message" : "Item updated",
+            "code" : 200
+        }
+
+    except Exception as e: 
+        print(e)
+        return {"success": False, "error": "An error occurred!", "code": 500}
+
+
 def GetItemsWithCategories():
     """Get all items with their category information"""
     try:
@@ -177,6 +206,53 @@ def GetItemsWithCategories():
     except Exception as e:
         print("DB error:", e)
         return {"success": False, "error": "An error occurred!", "code": 500}
+
+
+def GetItemById(item_id):
+    """Get a specific item by ID with its category information"""
+    try:
+        item = Items.query.filter_by(uniqueid = item_id).first().to_dict(include_items=True)
+
+        if not item:
+            return {"success": False, "error": "Item not found", "code": 404}
+        
+
+        return {
+            "success": True,
+            "data": item,
+            "code": 200
+        }
+    except Exception as e:
+        print("DB error:", e)
+        return {"success": False, "error": "An error occurred!", "code": 500}
+
+
+def getItemWithCategory(data): 
+    try: 
+        cat_id = data.get("catid" , None)
+
+        if not cat_id: 
+            return {"success" : False, "error" : "Category id is required!" , "code" : 400}
+        
+        get_items = Items.query.filter_by(category = cat_id).all()
+        items_data = []
+        for i in get_items: 
+            print(i)
+            items_data.append(i.to_dict(include_items=True))
+
+        return {
+            "success": True,
+            "data": items_data,
+            "message" : "Data fetched successfully!",
+            "code": 200
+        }
+
+
+    except Exception as e: 
+        print(e)
+        return {"success" : False, "error" : "Internal server error!" , "code" : 500}
+
+
 
 def AddItem(data, files=None):
     try:

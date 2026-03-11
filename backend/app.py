@@ -67,6 +67,22 @@ def getAllCategories():
         return jsonify(success=False, error="Internal server error!"), 500
 
 
+@app.route("/api/getitems" , methods=["POST"])
+def getitemsbycategory():
+    try: 
+        
+        data = request.get_json()
+        resp  = Admin.getItemWithCategory(data)
+        if resp["success"]: 
+            return jsonify(success=True, message=resp["message"] , data=resp["data"] ) , resp["code"]
+        else:
+            return jsonify(success=False, error=resp["error"]), resp["code"]
+        
+
+    except Exception as e: 
+        print(e)
+        return jsonify(error="Inernal server error!" , success=False) , 500
+
 @app.route("/api/category/<int:category_id>", methods=["GET"])
 def getCategory(category_id):
     """Get a specific category"""
@@ -133,6 +149,23 @@ def getItemsWithCategories():
         return jsonify(success=False, error="Internal server error!"), 500
 
 
+@app.route("/api/items/<string:item_id>", methods=["GET"])
+def getItemById(item_id):
+    """Get a specific item by ID"""
+    try:
+       
+        resp = Admin.GetItemById(item_id)
+
+        if resp["success"]:
+            return jsonify(success=True, data=resp["data"]), resp["code"]
+        else:
+            return jsonify(success=False, error=resp["error"]), resp["code"]
+
+    except Exception as e:
+        print("Route error:", e)
+        return jsonify(success=False, error="Internal server error!"), 500
+
+
 @app.route("/api/uploaditem", methods=["POST"])
 def uploadItem():
     try:
@@ -142,8 +175,6 @@ def uploadItem():
 
         # convert form (ImmutableMultiDict) to a simple dict-like object
         data = form
-        print(data)
-        print(files)
         resp = Admin.AddItem(data, files)
 
         if not resp:
@@ -159,6 +190,20 @@ def uploadItem():
         return jsonify(success=False, error="Internal server error!"), 500
     
 
+@app.route("/api/updateitem" , methods=["POST"])
+def updateItem(): 
+    try: 
+        data = request.form
+        resp = Admin.updateItem(data)
+        if not resp:
+            return jsonify(success=False , error="Unexpected error"), 500
+
+        if resp["success"]:
+            return jsonify(success=True, message=resp["message"]), resp["code"]
+        
+    except Exception as e:
+        print("Route error:", e)
+        return jsonify(success=False, error="Internal server error!"), 500
 
 if __name__ == '__main__':
     check(app)

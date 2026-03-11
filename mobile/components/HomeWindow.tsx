@@ -1,11 +1,15 @@
 import { View, Text, Image, ScrollView, Pressable } from "react-native";
 import React from "react";
 import { ChevronRight, Star } from 'lucide-react-native';
-import { Link } from "expo-router";
+import { Link , useRouter } from "expo-router";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
+import { Route } from "expo-router/build/Route";
 
 export default function HomeWindow() {
+
+  const router = useRouter()
+
   const Data = [
     {
       Name: "Meal & Combos",
@@ -29,6 +33,10 @@ export default function HomeWindow() {
       })),
     },
   ];
+
+  const HandleItemRoute = (id: Number) => {
+    router.push(`/item/${id}`)
+  }
 
   return (
     <ScrollView
@@ -66,7 +74,8 @@ export default function HomeWindow() {
             contentContainerStyle={{ paddingLeft: 16, paddingRight: 8 }}
           >
             {section.products.map((product, i) => (
-              <Pressable
+              <Pressable 
+                onPress={()=> HandleItemRoute(i)}
                 key={i}
                 className="bg-gray-100 p-[10px] flex-col gap-[3px] relative w-[140px] mr-4 rounded-2xl shadow-lg"
                 style={{
