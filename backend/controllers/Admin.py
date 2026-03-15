@@ -82,28 +82,33 @@ def UpdateCategory(category_id, data):
 
 
 def DeleteCategory(category_id):
-    """Delete a category"""
+    """Delete a category and its associated items"""
     try:
         category = Category.query.get(category_id)
         
         if not category:
             return {"success": False, "error": "Category not found", "code": 404}
 
-        # Check if category has items
-        items_count = Items.query.filter_by(category=category_id).count()
-        if items_count > 0:
-            return {
-                "success": False,
-                "error": f"Cannot delete category with {items_count} associated items",
-                "code": 400
-            }
+        # Check for associated items and cascade delete
+        items = Items.query.filter_by(category=category_id).all()
+        for item in items:
+            # Delete associated S3 images
+            if item.images:
+                for img in item.images:
+                    try:
+                        delete_file(img)
+                    except Exception as e:
+                        print(f"Error deleting image {img}: {e}")
+            
+            # Delete item from database
+            db.session.delete(item)
 
         db.session.delete(category)
         db.session.commit()
 
         return {
             "success": True,
-            "message": "Category deleted successfully",
+            "message": "Category and associated items deleted successfully",
             "code": 200
         }
 
@@ -329,6 +334,9 @@ def getItemWithCategory(data):
 
 def AddItem(data, files=None):
     try:
+        if not files or len(files) == 0:
+            return {"success": False, "error": "At least one image is required", "code": 400}
+
         name = data.get("name")
         desc = data.get("desc")
         price = data.get("price")

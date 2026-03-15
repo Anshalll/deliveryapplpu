@@ -183,6 +183,9 @@ def deleteItem(item_id):
 @app.route("/api/uploaditem", methods=["POST"])
 def uploadItem():
     try:
+        if not request.content_type.startswith('multipart/form-data'):
+            return jsonify(success=False, error="Content-Type must be multipart/form-data"), 415
+
         # * support multipart/form-data: fields in request.form, files in request.files
         form = request.form
         files = request.files.getlist('images')
