@@ -5,7 +5,7 @@ from utils.index import checkfile
 import os
 import uuid
 import tempfile
-
+from aws.index import delete_file
 
 # ===================== CATEGORY FUNCTIONS =====================
 
@@ -82,28 +82,33 @@ def UpdateCategory(category_id, data):
 
 
 def DeleteCategory(category_id):
-    """Delete a category"""
+    """Delete a category and its associated items"""
     try:
         category = Category.query.get(category_id)
         
         if not category:
             return {"success": False, "error": "Category not found", "code": 404}
 
-        # Check if category has items
-        items_count = Items.query.filter_by(category=category_id).count()
-        if items_count > 0:
-            return {
-                "success": False,
-                "error": f"Cannot delete category with {items_count} associated items",
-                "code": 400
-            }
+        # Check for associated items and cascade delete
+        items = Items.query.filter_by(category=category_id).all()
+        for item in items:
+            # Delete associated S3 images
+            if item.images:
+                for img in item.images:
+                    try:
+                        delete_file(img)
+                    except Exception as e:
+                        print(f"Error deleting image {img}: {e}")
+            
+            # Delete item from database
+            db.session.delete(item)
 
         db.session.delete(category)
         db.session.commit()
 
         return {
             "success": True,
-            "message": "Category deleted successfully",
+            "message": "Category and associated items deleted successfully",
             "code": 200
         }
 
@@ -147,32 +152,105 @@ def GetCategory(category_id):
 
 # ===================== ITEM FUNCTIONS =====================
 
-def updateItem(data): 
+def updateItem(data, files=None): 
     try: 
+        item_id = data.get("id" , None)
         name = data.get("name" , None)
         desc = data.get("desc" , None)
         quantity = data.get("quantity" , None)
-        uniqueid = data.get("uniqueid" , None)
         price = data.get("price" , None)
         status = data.get("status" , None)
         category = data.get("category" , None)
 
-        if not name or not desc or not price or not quantity or not category or not status or not uniqueid:
+        if not item_id:
+            return {"success": False, "error": "Item ID is required", "code": 400}
+
+        if not name or not desc or not price or not quantity or not category or not status:
             return {"success": False, "error": "Missing required fields", "code": 400}
 
-        if name.strip() == "" or desc.strip() == "" or status.strip() == "" or uniqueid.strip() == "":
+        if name.strip() == "" or desc.strip() == "" or status.strip() == "":
             return {"success": False, "error": "Fields cannot be empty", "code": 400}
 
+        # Find item by uniqueid
+        item = Items.query.filter_by(uniqueid=item_id).first()
         
+        if not item:
+            return {"success": False, "error": "Item not found", "code": 404}
+
+        # Validate category exists
+        category_obj = Category.query.get(category)
+        if not category_obj:
+            return {"success": False, "error": "Category does not exist", "code": 400}
+
+        # Validate numeric values
+        try:
+            price = float(price)
+            quantity = int(quantity)
+            category = int(category)
+        except:
+            return {"success": False, "error": "Invalid numeric values", "code": 400}
+
+        if price <= 0:
+            return {"success": False, "error": "Price must be greater than 0", "code": 400}
+
+        
+        new_urls = []
+        if files:
+            bucket = os.getenv("S3_BUCKET_NAME")
+            
+            # Upload new images
+            for f in files:
+                # Validate file extension and size
+                valid, err = checkfile(f)
+                if not valid:
+                    return {"success": False, "error": err, "code": 400}
+                
+                # rename and save locally
+                ext = f.filename.rsplit('.',1)[1].lower()
+                newname = f"{uuid.uuid4()}.{ext}"
+                tmp_path = os.path.join(tempfile.gettempdir(), newname)
+                f.save(tmp_path)
+                
+                # upload to s3
+                success = upload_file(tmp_path, f"items/{newname}" , f.content_type )
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+                
+                if not success:
+                    return {"success": False, "error": "Failed to upload file", "code": 500}
+                
+                if bucket:
+                    new_urls.append(f"/items/{newname}")
+                else:
+                    return {"success" : False, "error" : "Internal server error!" , "code" : 500}
+            
+            # Append new images to existing images
+            if item.images:
+                item.images = item.images + new_urls
+            else:
+                item.images = new_urls
+        
+        # Update item fields
+        item.name = name
+        item.desc = desc
+        item.price = price
+        item.quantity = quantity
+        item.status = status
+        item.category = category
+
+        db.session.commit()
 
         return {
             "success" : True,
-            "message" : "Item updated",
+            "message" : "Item updated successfully",
             "code" : 200
         }
 
     except Exception as e: 
         print(e)
+        db.session.rollback()
         return {"success": False, "error": "An error occurred!", "code": 500}
 
 
@@ -256,6 +334,9 @@ def getItemWithCategory(data):
 
 def AddItem(data, files=None):
     try:
+        if not files or len(files) == 0:
+            return {"success": False, "error": "At least one image is required", "code": 400}
+
         name = data.get("name")
         desc = data.get("desc")
         price = data.get("price")
@@ -337,4 +418,53 @@ def AddItem(data, files=None):
         return {"success": False, "error": "An error occurred!", "code": 500}
 
 
-    
+def deleteInventoryImage(data): 
+    try: 
+        imgkey = data.get("imgname")
+        itemid = data.get("itemid")
+        
+        if not imgkey or not itemid: 
+            return {"success": False, "error": "Missing imgname or itemid", "code": 400}
+        
+        is_deleted = delete_file(imgkey)
+        
+        item = Items.query.filter_by(uniqueid=itemid).first()
+        if item and item.images:
+            if imgkey in item.images:
+                updated_images = [img for img in item.images if img != imgkey]
+                item.images = updated_images
+                db.session.commit()
+
+        return {"success": True  , "message": "Image deleted!" , "code": 200}
+    except Exception as e: 
+        print(e)
+        return {"success": False, "error": "An error occurred!", "code": 500}
+
+def DeleteItem(item_id):
+    """Delete an item and its images"""
+    try:
+        item = Items.query.filter_by(uniqueid=item_id).first()
+        
+        if not item:
+            return {"success": False, "error": "Item not found", "code": 404}
+
+        if item.images:
+            for img in item.images:
+                try:
+                    delete_file(img)
+                except Exception as e:
+                    print(e)
+
+        db.session.delete(item)
+        db.session.commit()
+
+        return {
+            "success": True,
+            "message": "Item deleted successfully",
+            "code": 200
+        }
+
+    except Exception as e:
+        print("DB error:", e)
+        db.session.rollback()
+        return {"success": False, "error": "An error occurred!", "code": 500}

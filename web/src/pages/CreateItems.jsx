@@ -51,6 +51,11 @@ export default function CreateItems() {
 
 
   const UploadItem = async () => {
+    if (Files.length === 0) {
+      ErrorToast("At least one image is required!");
+      return;
+    }
+
     setisLoading(true);
     const formData = new FormData();
     formData.append('name', Name);
@@ -65,23 +70,24 @@ export default function CreateItems() {
       formData.append('images', file);
     });
 
-    const response = await fetch("http://localhost:5000/api/uploaditem", {
-      method: "POST",
-      body: formData
-    });
+    try {
+      const response = await fetch("http://localhost:5000/api/uploaditem", {
+        method: "POST",
+        body: formData
+      });
 
 
-    const result = await response.json();
-    if (result.success) {
-      window.location.reload();
-      setisLoading(false);
-
-    } else {
-      ErrorToast(result.error)
+      const result = await response.json();
+      if (result.success) {
+        window.location.reload();
+      } else {
+        ErrorToast(result.error)
+      }
+    } catch (error) {
+      ErrorToast("An error occurred during submission!");
+    } finally {
       setisLoading(false);
     }
-
-
   }
 
 
@@ -113,12 +119,13 @@ export default function CreateItems() {
       Price.trim() !== "" &&
       Quant.trim() !== "" &&
       Category.trim() !== "" &&
-      Status.trim() !== "";
+      Status.trim() !== "" &&
+      Files.length > 0;
 
     const discountValid = !isDiscounted || (DiscounPer.trim() !== "");
 
     setisTrue(requiredFilled && discountValid);
-  }, [Name, Desc, Price, Quant, Category, Status, isDiscounted, DiscounPer]);
+  }, [Name, Desc, Price, Quant, Category, Status, isDiscounted, DiscounPer, Files]);
 
   return (
     <div className='w-full h-[100vh] flex items-center justify-center'>
