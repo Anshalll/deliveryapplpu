@@ -27,6 +27,9 @@ export default function InventoryPage() {
       const response = await fetch("http://localhost:5000/api/category")
       const data = await response.json()
       setCategories(data.data)
+      if (data.data && data.data.length > 0) {
+        setSelectedCategory(data.data[0].id);
+      }
     }
 
     if (categories.length === 0) {
@@ -34,7 +37,7 @@ export default function InventoryPage() {
     }
   }, [categories])
 
-  const [selectedCategory, setSelectedCategory] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -189,11 +192,30 @@ export default function InventoryPage() {
   };
 
   // Delete category
-  const handleDeleteCategory = (id) => {
-    setCategories(categories.filter((cat) => cat.id !== id));
-    setItems(items.filter((item) => item.categoryId !== id));
-    if (selectedCategory === id) {
-      setSelectedCategory(categories[0]?.id || null);
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this category?")) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/category/${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        SuccessToast("Category deleted successfully!");
+        setCategories(categories.filter((cat) => cat.id !== id));
+        // Only reset items and selection if the active category was deleted
+        if (selectedCategory === id) {
+          setItems([]);
+          setSelectedCategory(categories[0]?.id || null);
+        }
+      } else {
+        ErrorToast(data.error || "Failed to delete category!");
+      }
+    } catch (err) {
+      console.error(err);
+      ErrorToast("An error occurred while deleting the category!");
     }
   };
 
@@ -201,16 +223,11 @@ export default function InventoryPage() {
 
 
   const filteredItems = items.filter(
-    (item) =>
-      item.category === selectedCategory &&
-      (item.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    (item) => item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Filter categories by search
-  const filteredCategories = categories.filter((cat) =>
-    cat.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Categories (no longer filtered by search)
+  const filteredCategories = categories;
 
 
   const HandleSelectedCategory = async (id) => {
