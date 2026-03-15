@@ -39,7 +39,7 @@ export default function InventoryPage() {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
-
+  
 
 
 
@@ -166,8 +166,26 @@ export default function InventoryPage() {
 
 
   // Delete item
-  const handleDeleteItem = (id) => {
-    setItems(items.filter((item) => item.id !== id));
+  const handleDeleteItem = async (uniqueid) => {
+    if(!window.confirm("Are you sure you want to delete this item?")) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/items/${uniqueid}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if(data.success) {
+          SuccessToast("Item deleted successfully!");
+          setItems(items.filter((item) => item.uniqueid !== uniqueid));
+        } else {
+          ErrorToast(data.error || "Failed to delete item!");
+        }
+      } else {
+        ErrorToast("Failed to delete item!");
+      }
+    } catch(err) {
+      ErrorToast("An error occurred while deleting item!");
+    }
   };
 
   // Delete category

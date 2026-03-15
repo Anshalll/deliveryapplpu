@@ -165,15 +165,29 @@ def getItemById(item_id):
         print("Route error:", e)
         return jsonify(success=False, error="Internal server error!"), 500
 
+@app.route("/api/items/<string:item_id>", methods=["DELETE"])
+def deleteItem(item_id):
+    """Delete a specific item by ID"""
+    try:
+        resp = Admin.DeleteItem(item_id)
+
+        if resp["success"]:
+            return jsonify(success=True, message=resp["message"]), resp["code"]
+        else:
+            return jsonify(success=False, error=resp["error"]), resp["code"]
+
+    except Exception as e:
+        print("Route error:", e)
+        return jsonify(success=False, error="Internal server error!"), 500
 
 @app.route("/api/uploaditem", methods=["POST"])
 def uploadItem():
     try:
-        # support multipart/form-data: fields in request.form, files in request.files
+        # * support multipart/form-data: fields in request.form, files in request.files
         form = request.form
         files = request.files.getlist('images')
 
-        # convert form (ImmutableMultiDict) to a simple dict-like object
+        # ? convert form (ImmutableMultiDict) to a simple dict-like object
         data = form
         resp = Admin.AddItem(data, files)
 
@@ -188,20 +202,41 @@ def uploadItem():
     except Exception as e:
         print("Route error:", e)
         return jsonify(success=False, error="Internal server error!"), 500
-    
 
-@app.route("/api/updateitem" , methods=["POST"])
-def updateItem(): 
-    try: 
-        data = request.form
-        resp = Admin.updateItem(data)
+
+@app.route("/api/deleteitemimage" , methods=["POST"])
+def deleteimage(): 
+    try:
+        data = request.get_json()
+        print(data)
+        resp = Admin.deleteInventoryImage(data)
         if not resp:
             return jsonify(success=False , error="Unexpected error"), 500
 
         if resp["success"]:
             return jsonify(success=True, message=resp["message"]), resp["code"]
+        else:
+            return jsonify(success=False, error=resp["error"]), resp["code"]
         
-    except Exception as e:
+    except Exception as e: 
+        print(e)
+        return  jsonify(success=False, error="Internal server error!"), 500
+
+@app.route("/api/updateitem" , methods=["POST"])
+def updateItem(): 
+    try: 
+        data = request.form
+        files = request.files.getlist('images')
+        resp = Admin.updateItem(data, files)
+        if not resp:
+            return jsonify(success=False , error="Unexpected error"), 500
+
+        if resp["success"]:
+            return jsonify(success=True, message=resp["message"]), resp["code"]
+        else:
+            return jsonify(success=False, error=resp["error"]), resp["code"]
+    
+    except Exception as e: 
         print("Route error:", e)
         return jsonify(success=False, error="Internal server error!"), 500
 

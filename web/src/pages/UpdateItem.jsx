@@ -82,8 +82,78 @@ export default function EditProductPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/`)
+    setSaveStatus(null);
+    
+    try {
+      const formdata = new FormData();
+      
+      formdata.append('id', id);
+      formdata.append('name', formData.name || '');
+      formdata.append('category', formData.category || '');
+      formdata.append('desc', formData.desc || '');
+      formdata.append('status', formData.status || 'Active');
+      formdata.append('price', formData.price || 0);
+      formdata.append('quantity', formData.quantity || 0);
+      
+      // * Add new images
+      selectedImages.forEach((img, index) => {
+        formdata.append('images', img.file);
+      });
+      
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/updateitem`, {
+        method: "POST",
+        body: formdata
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setSaveStatus('success');
+        setSelectedImages([]);
+        setTimeout(() => setSaveStatus(null), 3000);
+        
+        // Re-fetch item data to get updated images
+        const refetch = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/items/${id}`);
+        if(refetch.ok) {
+          const newData = await refetch.json();
+          setFormData(newData.data);
+        }
+      } else {
+        alert('Error updating product');
+        setSaveStatus(null);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error updating product');
+      setSaveStatus(null);
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const HandleImagedelete = async (imgkey) => {
+    const response  = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/deleteitemimage` , {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ imgname: imgkey, itemid: id })
+    })
+
+    if (!response.ok) {
+        alert("Failed to delete image!")
+        return;
+    }
+
+    const data = await response.json()
+    if(data.success) {
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images ? prev.images.filter(img => img !== imgkey) : []
+      }));
+    } else {
+        alert(data.error || "Failed to delete image!");
+    }
+  }
   
   const stockStatus =  Number(formData.quantity) > 50 ? 'High' : Number(formData.quantity) > 20 ? 'Medium' : 'Low';
   const stockColor = Number(formData.quantity) > 50 ? 'bg-green-500/20 text-green-400' : Number(formData.quantity) > 20 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400';
@@ -303,9 +373,10 @@ export default function EditProductPage() {
                             alt={`Current ${index}`}
                             className="w-40 h-40 object-contain rounded-lg border border-zinc-700"
                           />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                          <div className="absolute w-40 h-40 inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
                             <span className="text-xs text-gray-300">Current Image</span>
                           </div>
+                          <button onClick={() => HandleImagedelete(img)} className='absolute flex h-[20px] w-[20px] rounded-full right-[90px] top-0 text-white bg-[crimson]'><X size={20}/></button>
                         </div>
                       ))}
                     </div>
