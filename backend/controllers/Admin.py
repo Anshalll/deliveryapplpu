@@ -56,7 +56,7 @@ def CreateCategory(data):
     """Create a new item category"""
     try:
         name = data.get("name")
-
+    
         if not name or name.strip() == "":
             return {"success": False, "error": "Category name is required", "code": 400}
 
@@ -358,7 +358,7 @@ def getItemWithCategory(data):
         get_items = Items.query.filter_by(category = cat_id).all()
         items_data = []
         for i in get_items: 
-            print(i)
+            
             items_data.append(i.to_dict(include_items=True))
 
         return {

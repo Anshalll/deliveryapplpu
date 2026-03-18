@@ -49,7 +49,7 @@ def check_admin():
 def check_logged_admin(): 
     try: 
         resp =  check_admin_status(request)
-        print(resp)
+      
         if not resp: 
            
             return jsonify(success=True, message="Admin logged!"), 200
@@ -283,7 +283,6 @@ def uploadItem():
 def deleteimage(): 
     try:
         data = request.get_json()
-        print(data)
         resp = Admin.deleteInventoryImage(data)
         if not resp:
             return jsonify(success=False , error="Unexpected error"), 500
