@@ -34,10 +34,25 @@ export default function AdminLogin() {
         return
       }
 
-      // On success, redirect to dashboard
-      console.log('Login successful:', { email, password })
-      // In a real app, you would redirect here
-      // router.push('/dashboard')
+
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ useremail: email, password })
+      })
+
+      const data = await response.json()
+      if (!data.success) {
+        setError(data.error)
+      }
+      else{
+       
+        window.location.reload();
+      }
+
     } catch (err) {
       setError('An error occurred. Please try again.')
     } finally {
@@ -101,7 +116,7 @@ export default function AdminLogin() {
               {/* Error Message */}
               {error && (
                 <div className="bg-red-500 bg-opacity-10 border border-red-500 border-opacity-50 rounded-lg px-4 py-3">
-                  <p className="text-red-400 text-sm font-medium">{error}</p>
+                  <p className="text-white text-sm font-medium">{error}</p>
                 </div>
               )}
 

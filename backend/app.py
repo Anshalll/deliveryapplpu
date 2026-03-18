@@ -26,7 +26,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-CORS(app)
+CORS(app , supports_credentials=True)
 
 
 @app.before_request
@@ -49,12 +49,13 @@ def check_admin():
 def check_logged_admin(): 
     try: 
         resp =  check_admin_status(request)
+        print(resp)
         if not resp: 
            
             return jsonify(success=True, message="Admin logged!"), 200
 
         if resp and resp["error"]: 
-            print("this worked!")
+            
             return jsonify(success=False, error=resp["error"]), resp["code"]
     except Exception as e: 
         print(e)
@@ -74,7 +75,13 @@ def adminlogin():
         if resp["success"]:
             
             out =  jsonify(success=True, message=resp["message"], data=resp.get("data"))
-            out.set_cookie('session', resp["token"])
+            out.set_cookie(
+                'session', 
+                resp["token"] , 
+                httponly=True,
+                secure=False,    
+                samesite="Lax"    
+            )
             return out
         else:
             return jsonify(success=False, error=resp["error"]), resp["code"]
