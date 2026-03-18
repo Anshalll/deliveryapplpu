@@ -24,18 +24,20 @@ export default function InventoryPage() {
   useEffect(() => {
 
     const getdata = async () => {
-      const response = await fetch("http://localhost:5000/api/category")
-      const data = await response.json()
-      setCategories(data.data)
-      if (data.data && data.data.length > 0) {
-        setSelectedCategory(data.data[0].id);
+      try {
+        const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category`)
+        const data = await response.json()
+        setCategories(data.data || [])
+        if (data.data && data.data.length > 0) {
+          setSelectedCategory(data.data[0].id);
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
       }
     }
 
-    if (categories.length === 0) {
-      getdata();
-    }
-  }, [categories])
+    getdata();
+  }, [])
 
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,7 +70,7 @@ export default function InventoryPage() {
     if (!selectedCategory) return; // Prevent premature fetch
 
     const getitemsdata = async () => {
-      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/getitems`, {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/getitems`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -104,7 +106,7 @@ export default function InventoryPage() {
   const handleAddCategory = () => {
 
     const handleAddNewCategory = async () => {
-      const response = await fetch("http://localhost:5000/api/category", {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -169,13 +171,11 @@ export default function InventoryPage() {
     }
   };
 
-
-
   // Delete item
   const handleDeleteItem = async (uniqueid) => {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
     try {
-      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/items/${uniqueid}`, {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/items/${uniqueid}`, {
         method: "DELETE",
       });
       if (response.ok) {
@@ -199,7 +199,7 @@ export default function InventoryPage() {
     if (!window.confirm("Are you sure you want to delete this category?")) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/category/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category/${id}`, {
         method: "DELETE",
       });
 
@@ -230,7 +230,7 @@ export default function InventoryPage() {
     if (!editCategoryName.trim()) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/category/${editCategoryId}`, {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category/${editCategoryId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -264,30 +264,9 @@ export default function InventoryPage() {
   );
 
 
-  const HandleSelectedCategory = async (id) => {
-
-
-    setSelectedCategory(id)
-    const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/getitems`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ catid: selectedCategory })
-    })
-
-    if (!response.ok) {
-      ErrorToast("Error fetching data!");
-    }
-
-    const data = await response.json()
-    if (data.success) {
-
-      setItems(data.data)
-    }
-
-
-  }
+  const HandleSelectedCategory = (id) => {
+    setSelectedCategory(id);
+  };
 
 
 

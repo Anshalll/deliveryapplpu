@@ -37,7 +37,7 @@ export default function CreateItems() {
   useEffect(() => {
 
     const getdata = async () => {
-      const response = await fetch("http://localhost:5000/api/category")
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category`)
       const data = await response.json()
       setCategories(data.data)
     }
@@ -71,7 +71,7 @@ export default function CreateItems() {
     });
 
     try {
-      const response = await fetch("http://localhost:5000/api/uploaditem", {
+      const response = await fetch("http://localhost:5000/api/admin/uploaditem", {
         method: "POST",
         body: formData
       });

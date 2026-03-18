@@ -16,7 +16,7 @@ export default function EditProductPage() {
   useEffect(() => {
 
     const getdata = async () => {
-      const response = await fetch("http://localhost:5000/api/category")
+      const response = await fetch("http://localhost:5000/api/admin/category")
       const data = await response.json()
       setCategories(data.data)
     }
@@ -33,7 +33,7 @@ export default function EditProductPage() {
 
     const getitemdata = async () => {
 
-      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/items/${id}`)
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/items/${id}`)
       if (!response.ok) {
         alert("An error occured while fetching product data!")
       }
@@ -100,7 +100,7 @@ export default function EditProductPage() {
         formdata.append('images', img.file);
       });
       
-      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/updateitem`, {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/updateitem`, {
         method: "POST",
         body: formdata
       });
@@ -112,7 +112,7 @@ export default function EditProductPage() {
         setTimeout(() => setSaveStatus(null), 3000);
         
         // Re-fetch item data to get updated images
-        const refetch = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/items/${id}`);
+        const refetch = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/items/${id}`);
         if(refetch.ok) {
           const newData = await refetch.json();
           setFormData(newData.data);
@@ -131,7 +131,7 @@ export default function EditProductPage() {
   };
 
   const HandleImagedelete = async (imgkey) => {
-    const response  = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/deleteitemimage` , {
+    const response  = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/deleteitemimage` , {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -181,7 +181,7 @@ export default function EditProductPage() {
             </button>
           </div>
         </div>
-      </div>
+      </div> 
 
       {/* Save Status */}
       {saveStatus === 'success' && (
