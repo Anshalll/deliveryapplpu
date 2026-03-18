@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 from db.db import db
 from urllib.parse import quote_plus 
 from db.checkconnection import check
-from controllers import Admin
+from controllers import Admin , Auth
+from middlewares.middleware import check_is_logged_admin , check_admin_status
 
 app = Flask(__name__)
 
@@ -28,13 +29,63 @@ db.init_app(app)
 CORS(app)
 
 
+@app.before_request
+def check_admin(): 
+    try: 
+
+        resp = check_is_logged_admin(request)
+        if  resp: 
+           
+            if resp["success"]:
+                return jsonify(success=True, message=resp["message"]), resp["code"]
+            else:
+                return jsonify(success=False, error=resp["error"]), resp["code"]
+        
+    except Exception as e:
+        print("Route error:", e)
+        return jsonify(success=False, error="Internal server error!"), 500
+
+@app.route("/api/admin/getloggedadminstatus")
+def check_logged_admin(): 
+    try: 
+        resp =  check_admin_status(request)
+        if not resp: 
+           
+            return jsonify(success=True, message="Admin logged!"), 200
+
+        if resp and resp["error"]: 
+            print("this worked!")
+            return jsonify(success=False, error=resp["error"]), resp["code"]
+    except Exception as e: 
+        print(e)
+        return jsonify(success=False, error="Internal server error!") , 500
+
+
 @app.route('/', methods=['GET'])
 def hello():
     return jsonify(message='Hello, World!')
+ 
+@app.route("/api/admin/login", methods=["POST"])
+def adminlogin(): 
+    try:
+        data = request.get_json()
+        resp = Auth.adminlogin(data)
+
+        if resp["success"]:
+            
+            out =  jsonify(success=True, message=resp["message"], data=resp.get("data"))
+            out.set_cookie('session', resp["token"])
+            return out
+        else:
+            return jsonify(success=False, error=resp["error"]), resp["code"]
+
+    except Exception as e:
+        print("Route error:", e)
+        return jsonify(success=False, error="Internal server error!"), 500
 
 # ===================== CATEGORY ROUTES =====================
 
-@app.route("/api/category", methods=["POST"])
+@app.route("/api/admin/category", methods=["POST"])
 def createCategory():
     """Create a new category"""
     try:
@@ -51,7 +102,21 @@ def createCategory():
         return jsonify(success=False, error="Internal server error!"), 500
 
 
-@app.route("/api/category", methods=["GET"])
+@app.route("/api/admin/createadmin" , methods=["POST"])
+def createadmin(): 
+    try: 
+
+        resp = Admin.createAdmin(request.get_json())
+        if resp["success"]:
+            return jsonify(success=True, message=resp["message"], data=resp.get("data")), resp["code"]
+       
+        return jsonify(success=False, error=resp["error"]), resp["code"]
+    
+    except Exception as e: 
+        print(e)
+        return jsonify(success=False, error="Internal server error!"), 500
+
+@app.route("/api/admin/category", methods=["GET"])
 def getAllCategories():
     """Get all categories"""
     try:
@@ -67,7 +132,7 @@ def getAllCategories():
         return jsonify(success=False, error="Internal server error!"), 500
 
 
-@app.route("/api/getitems" , methods=["POST"])
+@app.route("/api/admin/getitems" , methods=["POST"])
 def getitemsbycategory():
     try: 
         
@@ -83,7 +148,7 @@ def getitemsbycategory():
         print(e)
         return jsonify(error="Inernal server error!" , success=False) , 500
 
-@app.route("/api/category/<int:category_id>", methods=["GET"])
+@app.route("/api/admin/category/<int:category_id>", methods=["GET"])
 def getCategory(category_id):
     """Get a specific category"""
     try:
@@ -99,7 +164,7 @@ def getCategory(category_id):
         return jsonify(success=False, error="Internal server error!"), 500
 
 
-@app.route("/api/category/<int:category_id>", methods=["PUT"])
+@app.route("/api/admin/category/<int:category_id>", methods=["PUT"])
 def updateCategory(category_id):
     """Update a category"""
     try:
@@ -116,7 +181,7 @@ def updateCategory(category_id):
         return jsonify(success=False, error="Internal server error!"), 500
 
 
-@app.route("/api/category/<int:category_id>", methods=["DELETE"])
+@app.route("/api/admin/category/<int:category_id>", methods=["DELETE"])
 def deleteCategory(category_id):
     """Delete a category"""
     try:
@@ -133,7 +198,7 @@ def deleteCategory(category_id):
 
 # ===================== ITEM ROUTES =====================
 
-@app.route("/api/items", methods=["GET"])
+@app.route("/api/admin/items", methods=["GET"])
 def getItemsWithCategories():
     """Get all items with their categories"""
     try:
@@ -149,7 +214,7 @@ def getItemsWithCategories():
         return jsonify(success=False, error="Internal server error!"), 500
 
 
-@app.route("/api/items/<string:item_id>", methods=["GET"])
+@app.route("/api/admin/items/<string:item_id>", methods=["GET"])
 def getItemById(item_id):
     """Get a specific item by ID"""
     try:
@@ -165,7 +230,7 @@ def getItemById(item_id):
         print("Route error:", e)
         return jsonify(success=False, error="Internal server error!"), 500
 
-@app.route("/api/items/<string:item_id>", methods=["DELETE"])
+@app.route("/api/admin/items/<string:item_id>", methods=["DELETE"])
 def deleteItem(item_id):
     """Delete a specific item by ID"""
     try:
@@ -180,7 +245,7 @@ def deleteItem(item_id):
         print("Route error:", e)
         return jsonify(success=False, error="Internal server error!"), 500
 
-@app.route("/api/uploaditem", methods=["POST"])
+@app.route("/api/admin/uploaditem", methods=["POST"])
 def uploadItem():
     try:
         if not request.content_type.startswith('multipart/form-data'):
@@ -207,7 +272,7 @@ def uploadItem():
         return jsonify(success=False, error="Internal server error!"), 500
 
 
-@app.route("/api/deleteitemimage" , methods=["POST"])
+@app.route("/api/admin/deleteitemimage" , methods=["POST"])
 def deleteimage(): 
     try:
         data = request.get_json()
@@ -225,7 +290,7 @@ def deleteimage():
         print(e)
         return  jsonify(success=False, error="Internal server error!"), 500
 
-@app.route("/api/updateitem" , methods=["POST"])
+@app.route("/api/admin/updateitem" , methods=["POST"])
 def updateItem(): 
     try: 
         data = request.form

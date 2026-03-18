@@ -1,4 +1,4 @@
-from models.Admin import Items, Category
+from models.Admin import Items, Category , AdminRegister
 from db.db import db
 from aws.index import upload_file
 from utils.index import checkfile
@@ -6,7 +6,50 @@ import os
 import uuid
 import tempfile
 from aws.index import delete_file
+import bcrypt
 
+
+def createAdmin(data): 
+    try: 
+        useremail = data.get("useremail" , None)
+        password = data.get("password" , None)
+
+
+        if not useremail or not password or useremail.strip() == "" or password.strip() == "": 
+            return {"success": False, "error": "User email and password are required", "code": 400}
+
+        useremail = useremail.strip()
+        password = password.strip()
+
+        byte = password.encode("utf-8")
+    
+
+        salt = bcrypt.gensalt()
+
+        hashed = bcrypt.hashpw(byte , salt)
+
+        check_user = AdminRegister.query.filter_by(username = useremail).first()
+        if check_user: 
+            return {"success": False, "error" : "An error occured!" , "code": 400}
+        
+        new_admin = AdminRegister(
+            username = useremail,
+            password = hashed
+        )
+
+        
+        
+
+        db.session.add(new_admin)
+        db.session.commit()
+
+        return {"success" : True, "message" : "Admin profile created!" , "code": 200}
+        
+        
+    except Exception as e: 
+        print(e)
+        db.session.rollback()
+        return {"success" : False, "error" : "Internal server error!" , "code": 500}
 # ===================== CATEGORY FUNCTIONS =====================
 
 def CreateCategory(data):
