@@ -43,8 +43,9 @@ class Items(db.Model):
     images = db.Column(db.JSON, nullable=True)  # store list of image URLs
 
     def to_dict(self , include_items=False , include_category=False): 
+        
         data = {
-                
+                "id": self.id,
                 "name" : self.name,
                 "desc": self.desc,
                 "price": self.price,
@@ -55,11 +56,7 @@ class Items(db.Model):
                 "discount": self.discount,
                 "images": self.images if self.images else []
             }
-        if include_items: 
-            
-            
-            return data
-        
         if include_category:
-            data["category"] = self.category
-    
+            data["category"] = self.category_ref.to_dict() if self.category_ref else self.category
+
+        return data

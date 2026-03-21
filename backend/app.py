@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from db.db import db
 from urllib.parse import quote_plus 
 from db.checkconnection import check
-from controllers import Admin , Auth
+from controllers import Admin , Auth, Mobile
 from middlewares.middleware import check_is_logged_admin , check_admin_status
 
 app = Flask(__name__)
@@ -26,8 +26,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-CORS(app , supports_credentials=True)
-
+CORS(app , supports_credentials=True , origins=["*"])
+app.config.update(
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_SECURE=True  
+)
 
 @app.before_request
 def check_admin(): 
@@ -313,6 +316,23 @@ def updateItem():
     except Exception as e: 
         print("Route error:", e)
         return jsonify(success=False, error="Internal server error!"), 500
+
+
+@app.route("/api/app/getitems" , methods=["GET"])
+def getcatitems():
+    try: 
+        resp = Mobile.getallitems()
+
+        if resp["success"]:
+            return jsonify(success=True, data=resp["data"]), 200
+        else:
+            return jsonify(success=False, error=resp["message"]), 500
+
+    except Exception as e: 
+        print(e)
+        return jsonify(success=False, error="Internal server error!") , 500
+     
+
 
 if __name__ == '__main__':
     check(app)
