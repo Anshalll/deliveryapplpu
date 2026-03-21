@@ -25,7 +25,9 @@ export default function InventoryPage() {
 
     const getdata = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category`)
+        const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category` , {
+          "credentials" : "include"
+        })
         const data = await response.json()
         setCategories(data.data || [])
         if (data.data && data.data.length > 0) {
@@ -72,6 +74,7 @@ export default function InventoryPage() {
     const getitemsdata = async () => {
       const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/getitems`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
@@ -108,6 +111,7 @@ export default function InventoryPage() {
     const handleAddNewCategory = async () => {
       const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
@@ -176,6 +180,7 @@ export default function InventoryPage() {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
     try {
       const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/items/${uniqueid}`, {
+        credentials: "include",
         method: "DELETE",
       });
       if (response.ok) {
@@ -200,6 +205,7 @@ export default function InventoryPage() {
 
     try {
       const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category/${id}`, {
+        credentials: 'include',
         method: "DELETE",
       });
 
@@ -231,6 +237,7 @@ export default function InventoryPage() {
 
     try {
       const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/category/${editCategoryId}`, {
+        credentials: "include",
         method: "PUT",
         headers: {
           "Content-Type": "application/json"

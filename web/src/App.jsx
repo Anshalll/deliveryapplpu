@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import ProtectedRoute from './ProtectedRoute'
 import Loading from './components/Loading'
 
@@ -9,14 +9,40 @@ export default function App() {
   const Dashboard = lazy(() => import('./pages/Inventory'));
   const Notfound = lazy(() => import('./pages/Notfound'));
   const UpdateItem = lazy(() => import('./pages/UpdateItem'));
-  const CreateItem =  lazy(() => import('./pages/CreateItems'));
+  const CreateItem = lazy(() => import('./pages/CreateItems'));
+  const [auth, setauth] = useState(null)
 
-  const auth = true;
+
+  useEffect(() => {
+
+    const check_is_admin = async () => {
+
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/getloggedadminstatus` , {
+        credentials: "include"
+      })
+
+      const data = await response.json();
+      console.log(data)
+      if (data.error) {
+        setauth(false)
+
+      }
+      else {
+
+        setauth(true);
+      }
+
+    }
+
+    if (auth == null) {
+      check_is_admin()
+    }
+  }, [auth])
 
   return (
     <BrowserRouter>
       <Suspense fallback={<Loading />}>
-        <Routes>
+        {auth == null ? <Loading /> : <Routes>
 
           {/* Protected Dashboard */}
           <Route element={<ProtectedRoute user={auth} redirect="/login" />} >
@@ -32,7 +58,8 @@ export default function App() {
 
           <Route path='*' element={<Notfound />} />
 
-        </Routes>
+        </Routes>}
+
       </Suspense>
     </BrowserRouter>
   )

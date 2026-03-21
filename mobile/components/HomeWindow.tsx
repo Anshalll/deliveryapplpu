@@ -1,14 +1,32 @@
 import { View, Text, Image, ScrollView, Pressable } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronRight, Star } from 'lucide-react-native';
 import { Link , useRouter } from "expo-router";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
-import { Route } from "expo-router/build/Route";
+
+
 
 export default function HomeWindow() {
 
   const router = useRouter()
+  const [items, setitems] = useState([])
+
+
+ useEffect(() => {
+  const getItems = async () => {
+    try {
+      const response = await fetch("http://172.21.37.122:5000/api/app/getitems");
+      const data = await response.json();
+      setitems(data);
+    } catch (error) {
+      console.log("FETCH ERROR:", error);
+    }
+  };
+
+  getItems();
+}, []);
+
 
   const Data = [
     {
@@ -52,7 +70,9 @@ export default function HomeWindow() {
           resizeMode="cover"
         />
       </View>
-
+      <Text>
+        {JSON.stringify(items)}
+      </Text>
       {/* Sections */}
       {Data.map((section, index) => (
         <View key={index} className="mt-8">
