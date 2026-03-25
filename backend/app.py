@@ -27,10 +27,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 CORS(app , supports_credentials=True , origins=["*"])
-app.config.update(
-    SESSION_COOKIE_SAMESITE="None",
-    SESSION_COOKIE_SECURE=True  
-)
+# app.config.update(
+#     SESSION_COOKIE_SAMESITE="None",
+#     SESSION_COOKIE_SECURE=True  
+# )
 
 @app.before_request
 def check_admin(): 
@@ -81,9 +81,10 @@ def adminlogin():
             out.set_cookie(
                 'session', 
                 resp["token"] , 
+                max_age=3600,
+                secure=True,    
                 httponly=True,
-                secure=False,    
-                samesite="Lax"    
+                samesite='None'
             )
             return out
         else:
