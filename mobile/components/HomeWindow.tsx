@@ -16,7 +16,7 @@ export default function HomeWindow() {
  useEffect(() => {
   const getItems = async () => {
     try {
-      const response = await fetch("http://172.21.37.122:5000/api/app/getitems");
+      const response = await fetch("https://0x0rmyvsq7.execute-api.ap-south-1.amazonaws.com/delapp/api/app/getitems");
       const data = await response.json();
       setitems(data);
     } catch (error) {

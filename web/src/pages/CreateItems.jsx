@@ -71,7 +71,7 @@ export default function CreateItems() {
     });
 
     try {
-      const response = await fetch("http://localhost:5000/api/admin/uploaditem", {
+      const response = await fetch(`${import.meta.env.VITE_APP_SERVER_URL}/api/admin/uploaditem`, {
         method: "POST",
         body: formData
       });
